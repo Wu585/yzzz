@@ -66,7 +66,7 @@ setInterval(() => {
         <div class="avatar"></div>
         <div class="user-text">
           <span>欢迎您,</span>
-          <span>xx用户</span>
+          <span>admin用户</span>
         </div>
       </div>
     </div>

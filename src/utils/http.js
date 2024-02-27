@@ -4,7 +4,7 @@ export class Http {
   constructor(baseURL) {
     this.instance = axios.create({
       baseURL,
-      timeout: 5000
+      timeout: 10000
     });
   }
 

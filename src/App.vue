@@ -1,6 +1,5 @@
 <script setup>
 import {useStore} from "./store/index.js";
-import Home from "./components/Home.vue";
 
 const store = useStore()
 
@@ -8,7 +7,7 @@ const store = useStore()
 
 <template>
   <div class="app">
-    <Home/>
+    <RouterView/>
   </div>
 </template>
 

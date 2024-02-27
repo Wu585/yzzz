@@ -2,10 +2,19 @@
 import {onMounted, ref} from "vue";
 import {getImageUrl} from "../utils/getImage.js";
 import {http} from "../utils/http.js";
+import {useStore} from "../store/index.js";
+import {useRoute} from "vue-router";
+import MonitorPanel from "./MonitorPanel.vue";
+import * as tools from "../utils/tool.js"
+import {boxSelectQuery, calcArea, calcDistance, clear, reset} from "../utils/tool.js";
 
-const toolList = ref([
+const store = useStore()
+
+const toolList = ref([])
+
+const toolList1 = ref([
   {
-    name: "点选查询",
+    name: "点位查询",
     imageName: getImageUrl("clickToQuery")
   },
   {
@@ -32,16 +41,16 @@ const toolList = ref([
     imageName: getImageUrl("coordinatePicking")
   },
   {
-    name: "量算工具",
+    name: "测量",
     imageName: getImageUrl("measure"),
     childrenVisible: false,
     children: [
       {
-        name: "距离量算",
+        name: "距离测量",
         imageName: getImageUrl("distanceMeasurement"),
       },
       {
-        name: "面积量算",
+        name: "面积测量",
         imageName: getImageUrl("areaMeasurement"),
       }
     ]
@@ -55,47 +64,66 @@ const toolList = ref([
     imageName: getImageUrl("layerReset")
   },
   {
-    name: "清除",
+    name: "场景漫游",
     imageName: getImageUrl("sceneRoaming")
   },
 ])
 
 onMounted(async () => {
+  const {id} = useRoute().query
+
   const res1 = await http.get("/templateConfig/get", {
-    id: "1752519872051982338"
+    id
   })
-  console.log('res1');
-  console.log(res1);
 
   const toolbarStatus = JSON.parse(res1.data.toolbarStatus)
-  console.log('toolbarStatus');
+
+  console.log('toolbarStatus======');
   console.log(toolbarStatus);
 
   const res2 = await http.get("/toolbarConfig/getTree")
-  console.log('res2');
-  console.log(res2);
 
-  toolList.value = res2.data.filter(item => {
-    if (item.children.length > 0) {
-      item.children = item.children.filter(child => {
-        return toolbarStatus.indexOf(child.id) >= 0
-      })
-    }
-    return toolbarStatus.indexOf(item.id) >= 0
+  console.log('res2====toolbar===status');
+  console.log(res2.data);
+
+  toolList.value = res2.data.filter(item=>{
+    return toolbarStatus.find(tool => tool === item.id)
   })
 
   console.log('toolList.value');
   console.log(toolList.value);
 
-  toolList.value.map(item => ({
-    ...item,
-    imageName: "clickToQuery",
-  })).sort((a,b) => {
-      return a-b
+  /*toolList.value = res2.data.filter(item => {
+    if (item.children.length > 0) {
+      item.children = item.children.filter(child => {
+        return toolbarStatus.indexOf(child.id) >= 0
+      })
+      return toolbarStatus.indexOf(item.id)
+    }
+    return toolbarStatus.indexOf(item.id) >= 0
   })
 
-  console.log(toolList.value);
+  toolList.value.map(item => {
+    const x = toolList1.value.find(tool => tool.name === item.toolName)
+    if (x) {
+      item.imageName = x.imageName
+    }
+    if (item.children) {
+      item.children.map(child => {
+        const y = x.children.find(z => z.name === child.toolName)
+        if (y) {
+          child.imageName = y.imageName
+        }
+        return child
+      })
+    }
+    return item
+  }).sort((a, b) => {
+    return a - b
+  })
 
+  console.log('toolList.value');
+  console.log(toolList.value);*/
 })
 
 const selectedTool = ref({
@@ -104,9 +132,30 @@ const selectedTool = ref({
 
 const childrenBarVisible = ref(false)
 
+const map = {
+  "坐标拾取": "zbsq",
+  "图层复位": "reset"
+}
+
 const onClickToolItem = (item) => {
-  console.log('item');
-  console.log(item);
+  if (selectedTool.value.toolName === item.toolName) {
+    selectedTool.value = {
+      toolName: ""
+    }
+    clear()
+
+    if (item.toolName === "视点管理") {
+      store.setViewPanelVisible(false)
+    }
+
+    return
+  }
+
+  tools[map[item.toolName]]?.()
+
+  if (item.toolName === "视点管理") {
+    store.setViewPanelVisible(true)
+  }
 
   childrenBarVisible.value = false
 
@@ -114,6 +163,23 @@ const onClickToolItem = (item) => {
 
   if (item.children.length > 0) {
     childrenBarVisible.value = true
+  }
+}
+
+const onClickChildItem = (item) => {
+  const styleSelection = JSON.parse(item.styleSelection)
+  console.log('styleSelection');
+  console.log(styleSelection);
+
+  const lineColor = styleSelection.find(x => x.name === "边框:").HEX
+  const fillColor = styleSelection.find(x => x.name === "填充:").HEX
+
+  if (item.toolName === "距离测量") {
+    calcDistance(lineColor, fillColor)
+  } else if (item.toolName === "面积测量") {
+    calcArea()
+  } else if (item.toolName === "框选查询") {
+    boxSelectQuery(lineColor,fillColor)
   }
 }
 
@@ -127,9 +193,10 @@ const onClickToolItem = (item) => {
          :class="{active: selectedTool.toolName === item.toolName}"
     >
       <div class="childrenBar" v-if="item.children?.length>0 && item.toolName === selectedTool.toolName">
-        <div v-for="childItem in item.children" :key="childItem.toolName" class="child-item">
+        <div v-for="childItem in item.children" :key="childItem.toolName" class="child-item"
+             @click="() => onClickChildItem(childItem)">
           <!--          <img :src="childItem.imageName" alt="">-->
-          <img :src="getImageUrl('clickToQuery')" alt="">
+          <img :src="childItem.imageName" alt="">
           <span>{{ childItem.toolName }}</span>
         </div>
       </div>
@@ -140,7 +207,7 @@ const onClickToolItem = (item) => {
           placement="left-start"
       >
         <!--        <img :src="item.imageName" alt="">-->
-        <img :src="getImageUrl('clickToQuery')" alt="" @click="() => onClickToolItem(item)">
+        <img :src="item.imageName" alt="" @click="() => onClickToolItem(item)">
       </el-tooltip>
     </div>
   </div>
@@ -163,6 +230,10 @@ const onClickToolItem = (item) => {
 
   .tool-item {
     padding: 8px 16px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 14px;
 
     .childrenBar {
       background: url("../assets/images/tool-children-bg.png") no-repeat;
@@ -170,7 +241,6 @@ const onClickToolItem = (item) => {
       width: 124px;
       position: absolute;
       right: 60px;
-      transform: translateY(-30px);
       padding: 8px;
       cursor: pointer;
 
