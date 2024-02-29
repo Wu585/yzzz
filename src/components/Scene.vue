@@ -104,6 +104,7 @@ onMounted(async () => {
         window[name].latName = obj.y
         window[name].pointName = obj.pointName
         window[name].iframe = iframeUrl
+        window[name].pointIcon = tab.pointIcon
       }
     }
 
@@ -112,6 +113,9 @@ onMounted(async () => {
         if (item.gisAddress) {
           const gisAddress = item.gisAddress
           const legendName = item.name
+
+          console.log('legendName-===============');
+          console.log(legendName);
 
           if (type === "3D") {
             const promise = viewer.scene.addS3MTilesLayerByScp(gisAddress, {name: legendName});
@@ -144,6 +148,7 @@ onMounted(async () => {
             window[name].latName = obj.y
             window[name].pointName = obj.pointName
             window[name].iframe = iframeUrl
+            window[name].pointIcon = item.pointIcon
           }
         }
       })
@@ -161,6 +166,8 @@ onMounted(async () => {
       roll,
     },
   });
+
+  window.queryEntitiesArray = []
 })
 
 </script>

@@ -14,6 +14,7 @@ import HousePanel from "./HousePanel.vue";
 import WorkOrderPanel from "./WorkOrderPanel.vue";
 import {getMonitorCheckList, getVideoList, getWC, getWorkOrderList, getWzK} from "../utils/request.js";
 import ViewManagePanel from "./ViewManagePanel.vue";
+import RangeQueryPanel from "./RangeQueryPanel.vue";
 
 const store = useStore()
 
@@ -31,9 +32,9 @@ onMounted(async () => {
 })
 
 onMounted(async () => {
-  http.get("/front/getTree",{
+  http.get("/cameraPerspective/queryAll", {
     id
-  }).then(res=>{
+  }).then(res => {
     console.log('res====res');
     console.log(res);
   })
@@ -56,6 +57,7 @@ onMounted(async () => {
         :dataSource="store.tabDataList"
         @close="() => store.setTabDataPanelVisible(false)"
     />
+    <RangeQueryPanel v-if="store.rangeQueryPanelVisible" @close="() => store.setRangeQueryPanelVisible(false)"/>
     <ToolBar/>
     <ViewManagePanel v-show="store.viewPanelVisible"/>
     <div class="query-list-icon" @click="() => store.setTabDataPanelVisible(true)"></div>
@@ -72,7 +74,7 @@ onMounted(async () => {
 </template>
 
 <style lang="scss" scoped>
-.query-list-icon{
+.query-list-icon {
   width: 184px;
   height: 45px;
   position: absolute;
@@ -84,8 +86,8 @@ onMounted(async () => {
 }
 
 .iframe {
-  width: 500px;
-  height: 300px;
+  width: 600px;
+  height: 500px;
 }
 
 .bubble-container {

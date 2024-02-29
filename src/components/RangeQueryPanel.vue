@@ -12,6 +12,8 @@ import {flyTo} from "../utils/view.js";
 
 const store = useStore()
 
+let queryEntitiesArray = []
+
 const props = defineProps(['title', 'dataSource'])
 
 const emit = defineEmits(["close"])
@@ -30,7 +32,7 @@ let step = 10
 
 const dataList = ref([])
 
-let data = []
+const data = ref([])
 
 const loading = ref(false)
 
@@ -41,6 +43,10 @@ const selectedOption = ref(null)
 const selectOptionList = computed(() => {
   return store.selectedTabs.filter(item => item.legendType === "query")
 })
+
+/*onMounted(() => {
+  selectedOption.value = selectOptionList.value[0]
+})*/
 
 watchEffect(() => {
   if (selectOptionList.value.length === 0) {
@@ -54,96 +60,43 @@ watchEffect(async () => {
   if (window[store.tabDataTitle]) {
     loading.value = true
 
-    selectedOption.value = store.tabDataTitle
+    // selectedOption.value = store.tabDataTitle
 
     pointName.value = window[store.tabDataTitle]?.pointName
 
-    const dataUrl = window[store.tabDataTitle]?.url
+    console.log('selectedOption.value');
+    console.log(selectedOption.value);
 
-    if (!window[store.tabDataTitle].dataList) {
-      window[store.tabDataTitle].dataList = (await dataHttp.get(dataUrl)).data.data
-    }
-    data = window[store.tabDataTitle].dataList
+    data.value = window[selectedOption.value]?.queryDataList
 
-    dataList.value = data?.slice(start, end)
+    console.log('data###########');
+    console.log(data);
+
+    dataList.value = data.value?.slice(start, end)
 
     loading.value = false
 
     console.log('dataList.value');
     console.log(dataList.value);
 
-    const lonName = window[store.tabDataTitle].lonName
-    const latName = window[store.tabDataTitle].latName
-    const iframeUrl = window[store.tabDataTitle].iframe
-    const pointIcon = window[store.tabDataTitle].pointIcon
-    console.log('pointIcon');
-    console.log(pointIcon);
+    const lonName = window[selectedOption.value]?.lonName
+    const latName = window[selectedOption.value]?.latName
+    const iframeUrl = window[selectedOption.value]?.iframe
 
-    dataList.value?.forEach((item) => {
-      const longitude = item[lonName]
-      const latitude = item[latName]
+    /*dataList.value?.forEach((item) => {
+      const longitude = item.geometry.coordinates[0]
+      const latitude = item.geometry.coordinates[1]
 
-      // "api/YangZhou/images/wuyziku.png"
-      window[store.tabDataTitle].entitiesArray.push(
-          addEntity(+longitude, +latitude, 20, pointIcon, {
+      window[selectedOption.value].entitiesArray.push(
+          addEntity(+longitude, +latitude, 20, "/assets/entity-icons/monitor.png", {
             longitude,
             latitude,
             iframeUrl
           })
       )
-    })
+    })*/
   }
 
-})
-
-const scenePosition = ref(null);
-
-function setBubblePosition() {
-  if (scenePosition.value) {
-    const windowPosition = new Cesium.Cartesian2();
-    Cesium.SceneTransforms.wgs84ToWindowCoordinates(viewer.scene, scenePosition.value, windowPosition);
-    document.getElementById("bubble-container").style.top = windowPosition.y + "px";
-    document.getElementById("bubble-container").style.left = windowPosition.x + "px";
-  }
-}
-
-onMounted(() => {
-  // removeAllEntities()
-
-  viewer.scene.postRender.addEventListener(setBubblePosition);
-
-  const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas)
-
-  handler.setInputAction((movement) => {
-    let position = viewer.scene.pickPosition(movement.position);
-    const pick = viewer.scene.pick(movement.position);
-
-    if (!pick) {
-      store.setBubbleVisible(false)
-    }
-
-    if (!position) {
-      scenePosition.value = Cesium.Cartesian3.fromDegrees(0, 0, 0);
-    }
-
-    if (pick && pick.id && pick.id._description) {
-      const description = JSON.parse(pick.id._description)
-
-      console.log('description');
-      console.log(description);
-
-      const iframeUrl = description.iframeUrl
-
-      iframeUrl ?
-          store.setIframeUrl(`${iframeUrl}?x=${description.longitude}&y=${description.latitude}`) :
-          store.setBubbleVisible(false)
-
-      scenePosition.value = Cesium.Cartesian3.fromDegrees(description.longitude, description.latitude)
-
-      store.setBubbleVisible(true)
-    }
-
-  }, Cesium.ScreenSpaceEventType.LEFT_CLICK)
 })
 
 const removeAllEntities = () => {
@@ -166,7 +119,7 @@ const onLastPage = () => {
 }
 
 const onNextPage = () => {
-  if (currentPage.value === Math.floor(data.length / 10) + 1) {
+  if (currentPage.value === Math.floor(data.value.length / 10) + 1) {
     return
   }
 
@@ -179,21 +132,20 @@ const onNextPage = () => {
 const onChangePage = (val) => {
   const lonName = window[store.tabDataTitle].lonName
   const latName = window[store.tabDataTitle].latName
-  const pointIcon = window[store.tabDataTitle].pointIcon
 
   currentPage.value = +val
   start = (currentPage.value - 1) * step
   end = (currentPage.value - 1) * step + 10
-  dataList.value = data.slice(start, end)
+  dataList.value = data.value.slice(start, end)
 
-  removeAllEntities()
+  // removeAllEntities()
 
   dataList.value.forEach((item) => {
     const longitude = item[lonName]
     const latitude = item[latName]
 
     window[store.tabDataTitle].entitiesArray.push(
-        addEntity(+longitude, +latitude, 20, pointIcon, {
+        addEntity(+longitude, +latitude, 20, "/assets/entity-icons/monitor.png", {
           longitude,
           latitude
         })
@@ -202,14 +154,38 @@ const onChangePage = (val) => {
 }
 
 const onClickData = (item) => {
-  const lonName = window[store.tabDataTitle].lonName
-  const latName = window[store.tabDataTitle].latName
+  const x = item.geometry.coordinates[0]
+  const y = item.geometry.coordinates[1]
 
-  flyTo(+item[lonName], +item[latName])
+  flyTo(x, y)
 }
 
 const onChangeType = (value) => {
-  store.setTabDataTitle(value)
+  // store.setTabDataTitle(value)
+  window.queryEntitiesArray.forEach(entity => {
+    viewer.entities.remove(entity)
+  })
+  window.queryEntitiesArray = []
+  const option = window[value]
+  console.log('option');
+  console.log(option);
+  const {queryDataList, pointIcon} = option
+  console.log('pointIcon');
+  console.log(pointIcon);
+  queryDataList.forEach(poi => {
+    const longitude = poi.geometry.coordinates[0]
+    const latitude = poi.geometry.coordinates[1]
+    const description = poi.geometry.coordinates[2]
+    const iframeUrl = description.iframeUrl
+    window.queryEntitiesArray.push(
+        addEntity(longitude, latitude, 20, pointIcon, {
+          longitude,
+          latitude,
+          iframeUrl
+        })
+    )
+
+  })
 }
 
 
@@ -219,7 +195,7 @@ const onChangeType = (value) => {
   <div class="panel-wrapper">
     <div class="close" @click="onClose">×</div>
     <!--    <div class="title">{{ props.title }}</div>-->
-    <div class="title">图例数据查询列表</div>
+    <div class="title">范围查询列表</div>
     <div class="select-wrapper">
       <el-select
           v-model="selectedOption"
@@ -243,7 +219,7 @@ const onChangeType = (value) => {
         </div>-->
     <div v-if="store.selectedTabs.length" class="dataList" v-loading="loading">
       <div v-for="item in dataList" :key="item.name" :class="{'data-item': !loading}" @click="() => onClickData(item)">
-        {{ item[pointName] }}
+        {{ item.geometry.coordinates[2].name }}
       </div>
     </div>
     <div v-else class="no-data">
@@ -256,7 +232,7 @@ const onChangeType = (value) => {
       </div>
       <p @click="onNextPage"> {{ ">>" }} </p>
       <div class="option">
-        {{ currentPage }}/{{ Math.floor(data?.length / 10) + 1 }}
+        {{ currentPage }}/{{ (Math.floor(data?.length / 10) + 1) || 1 }}
       </div>
     </div>
   </div>
@@ -287,7 +263,7 @@ const onChangeType = (value) => {
   width: 331px;
   height: 700px;
   position: absolute;
-  left: 280px;
+  right: 180px;
   top: 150px;
   z-index: 10;
   background: url("../assets/images/tab-data-panel-bg.png") no-repeat;

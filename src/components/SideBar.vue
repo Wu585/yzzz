@@ -74,11 +74,11 @@ const onClickTab = async (tab) => {
     store.setTabDataTitle(store.selectedTabs[store.selectedTabs.length - 1]?.name || "")
 
     if (type === "3D") {
-      const layer = findLayer(legendName)
+      const layer = findLayer(name)
       layer.visible = false
       return
     } else if (type === "MAP") {
-      findMapLayer(legendName).show = false
+      findMapLayer(name).show = false
       return
     } else {
       window[name].entitiesArray?.forEach(entity => {
@@ -86,7 +86,6 @@ const onClickTab = async (tab) => {
       })
       window[name].entitiesArray = []
     }
-
     return
   }
 
@@ -94,14 +93,11 @@ const onClickTab = async (tab) => {
   console.log('store.selectedTabs');
   console.log(store.selectedTabs);
   if (type === "3D") {
-    const layer = findLayer(legendName)
+    const layer = findLayer(name)
     layer.visible = true
     viewer.flyTo(layer)
   } else if (type === "MAP") {
-    const layer = findMapLayer(legendName)
-    console.log("MAP============");
-    console.log(layer);
-    findMapLayer(legendName).show = true
+    findMapLayer(name).show = true
   } else {
     store.setTabDataPanelVisible(true)
     store.setTabDataTitle(name)
@@ -228,6 +224,7 @@ const onClickTab = async (tab) => {
           :style="{backgroundImage: store.selectedTabs.find(tab => tab.legendName === item.legendName)? `url(${getImageUrl('tab-item-bg-active')})`:`url(${getImageUrl('tab-item-bg')})` , backgroundSize:'100% 100%'}"
       >
         <span class="tab-name">{{ item.legendName }}</span>
+        <img v-show="item.labelIcon" class="tab-icon" :src="item.labelIcon" alt="">
       </div>
     </div>
     <div class="tabs-wrapper" v-show="bujianListVisible">
@@ -239,6 +236,7 @@ const onClickTab = async (tab) => {
           :style="{backgroundImage: store.selectedTabs.find(tab => tab.name === item.name)? `url(${getImageUrl('tab-item-bg-active')})`:`url(${getImageUrl('tab-item-bg')})`, backgroundSize:'100% 100%'}"
       >
         <span class="tab-name">{{ item.name }}</span>
+        <img v-show="item.labelIcon" class="tab-icon" :src="item.labelIcon" alt="">
       </div>
     </div>
   </div>
@@ -275,6 +273,13 @@ const onClickTab = async (tab) => {
     margin-left: 32px;
     height: 530px;
     overflow: auto;
+
+    .tab-icon{
+      width: 24px;
+      position: absolute;
+      left: 20px;
+      top: 6px;
+    }
 
     .tab-item {
       width: 156px;

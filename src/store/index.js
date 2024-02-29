@@ -8,6 +8,7 @@ export const useStore = defineStore('main', {
       tabDataTitle: "",
       tabDataList: [],
       tabDataPanelVisible: false,
+      rangeQueryPanelVisible: false,
       currentDynamicComponent: null,
       dynamicComponentProps: null,
       viewPanelVisible: false,
@@ -53,6 +54,9 @@ export const useStore = defineStore('main', {
     },
     setHasEntitiesArrayTabs(value) {
       this.hasEntitiesArrayTabs = value
+    },
+    setRangeQueryPanelVisible(visible) {
+      this.rangeQueryPanelVisible = visible
     }
   }
 })

@@ -3,16 +3,29 @@ import {onMounted, ref} from "vue";
 import {useStore} from "../store/index.js";
 import {addView, deleteV, getViewList, patchView} from "../utils/request.js";
 import {flyToView} from "../utils/view.js";
+import {ElMessage} from "element-plus";
 
 const store = useStore()
 
+let start = 0
+let end = 4
+let step = 4
+
+const viewData = ref([])
 const viewList = ref([])
 
 const refresh = async () => {
   const res = await getViewList()
-  console.log('view===========');
-  console.log(res.data);
-  viewList.value = res.data
+  viewData.value = res.data
+  viewData.value.push({
+    name: "新增视点"
+  })
+  viewList.value = viewData.value.slice(start, end)
+  if (viewList.value.length === 0) {
+    start -= step
+    end -= step
+    viewList.value = viewData.value.slice(start, end)
+  }
 }
 
 onMounted(async () => {
@@ -48,14 +61,18 @@ const onAdd = async () => {
     "cameraPerspectiveZ": cameraZ,
     // "cameraPerspectiveName": "",
   })
+  ElMessage({
+    message: '新增视点成功',
+    type: 'success',
+  })
   await refresh()
 }
 
 const editView = async (item) => {
-  console.log('item');
-  console.log(item);
   const {cameraX, cameraY, cameraZ, cameraPitch, cameraHeading, cameraRoll} = getCameraParam()
+
   await patchView({
+    cameraPerspectiveId: item.cameraPerspectiveId,
     "cameraPerspectiveHeading": cameraHeading,
     "cameraPerspectivePitch": cameraPitch,
     "cameraPerspectiveRoll": cameraRoll,
@@ -63,11 +80,15 @@ const editView = async (item) => {
     "cameraPerspectiveY": cameraY,
     "cameraPerspectiveZ": cameraZ,
   })
+
+  ElMessage({
+    message: '更新视点成功',
+    type: 'success',
+  })
   await refresh()
 }
 
 const flyView = (item) => {
-  console.log(item);
   const {
     cameraPerspectiveX,
     cameraPerspectiveY,
@@ -81,12 +102,30 @@ const flyView = (item) => {
 
 const deleteView = async (item) => {
   const id = item.cameraPerspectiveId
-  console.log('id');
-  console.log(id);
-  await deleteV({
-    ids: [+id]
+  await deleteV(id)
+  ElMessage({
+    message: '删除视点成功',
+    type: 'success',
   })
   await refresh()
+}
+
+const onLeft = () => {
+  if (start === 0) {
+    return
+  }
+  start -= step
+  end -= step
+  viewList.value = viewData.value.slice(start, end)
+}
+
+const onRight = () => {
+  if (end >= viewData.value.length) {
+    return
+  }
+  start += step;
+  end += step;
+  viewList.value = viewData.value.slice(start, end)
 }
 
 </script>
@@ -99,31 +138,53 @@ const deleteView = async (item) => {
     </div>
     <div class="content">
       <div v-for="item in viewList" :key="item.cameraPerspectiveId" class="view-item-wrapper">
-        <div class="view-item">
-
+        <div v-if="item.name !== '新增视点'">
+          <div class="view-item">
+          </div>
+          <div class="actions">
+            <img src="../assets/images/edit-view.png" @click="() => editView(item)" alt="">
+            <img src="../assets/images/fly-view.png" @click="() => flyView(item)" alt="">
+            <img src="../assets/images/delete-view.png" @click="() => deleteView(item)" alt="">
+          </div>
         </div>
-        <div class="actions">
-          <img src="../assets/images/edit-view.png" @click="() => editView(item)" alt="">
-          <img src="../assets/images/fly-view.png" @click="() => flyView(item)" alt="">
-          <img src="../assets/images/delete-view.png" @click="() => deleteView(item)" alt="">
-        </div>
-
-      </div>
-      <div class="view-item-wrapper">
-        <div class="view-item" @click="onAdd">
-          <img src="../assets/images/add-view.png" alt="">
-          <div :style="{paddingBottom:'16px'}">
-            点击新增
+        <div class="view-item-wrapper" v-if="item.name === '新增视点'">
+          <div class="view-item" @click="onAdd">
+            <img src="../assets/images/add-view.png" alt="">
+            <div :style="{paddingBottom:'16px'}">
+              点击新增
+            </div>
           </div>
         </div>
       </div>
+    </div>
+    <div class="left" @click="onLeft">
+      <img src="../assets/images/leftarrow.png" alt="">
+    </div>
+    <div class="right" @click="onRight">
+      <img src="../assets/images/rightarrow.png" alt="">
     </div>
   </div>
 </template>
 
 <style lang="scss" scoped>
+.left {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  left: 12px;
+  cursor: pointer;
+}
+
+.right {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  right: 12px;
+  cursor: pointer;
+}
+
 .panel-wrapper {
-  width: 512px;
+  width: 580px;
   height: 243px;
   position: absolute;
   bottom: 250px;
@@ -156,6 +217,7 @@ const deleteView = async (item) => {
     flex: 1;
     padding: 24px;
     display: flex;
+    justify-content: center;
 
     .view-item-wrapper {
       display: flex;

@@ -39,6 +39,6 @@ export const patchView = (data) => {
   return http.post("cameraPerspective/update", data)
 }
 
-export const deleteV = (data) => {
-  return http.post("cameraPerspective/deleteBatch", data)
+export const deleteV = (id) => {
+  return http.post(`cameraPerspective/delete?id=${id}`)
 }

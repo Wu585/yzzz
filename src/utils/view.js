@@ -16,3 +16,14 @@ export function flyToView(x, y, z, heading, pitch, roll) {
     }, duration: 1
   });
 }
+
+// 笛卡尔世界坐标转经纬度
+export function transformGeometricPosition(x, y, z) {
+  const ellipsoid = viewer.scene.globe.ellipsoid;
+  const cartesian3 = new Cesium.Cartesian3(x, y, z);
+  const cartographic = ellipsoid.cartesianToCartographic(cartesian3);
+  const lat = Cesium.Math.toDegrees(cartographic.latitude);
+  const lng = Cesium.Math.toDegrees(cartographic.longitude);
+  const alt = cartographic.height;
+  return {lng, lat, alt}
+}
