@@ -25,7 +25,7 @@ onMounted(async () => {
   console.log(res.data);
 
   // 所有图例数据
-  tabItemList.value = res.data.filter(tab => tab.legendStatus)
+  tabItemList.value = res.data.filter(tab => tab.legendStatus).sort((a, b) => a.sort - b.sort)
 })
 
 const store = useStore()
@@ -99,7 +99,7 @@ const onClickTab = async (tab) => {
   } else if (type === "MAP") {
     findMapLayer(name).show = true
   } else {
-    store.setTabDataPanelVisible(true)
+    // store.setTabDataPanelVisible(true)
     store.setTabDataTitle(name)
     const dataUrl = window[name]?.url
 
@@ -274,7 +274,7 @@ const onClickTab = async (tab) => {
     height: 530px;
     overflow: auto;
 
-    .tab-icon{
+    .tab-icon {
       width: 24px;
       position: absolute;
       left: 20px;

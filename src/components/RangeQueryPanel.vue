@@ -1,6 +1,6 @@
 <script setup>
 
-import {computed, onBeforeUnmount, onMounted, ref, watchEffect} from "vue";
+import {computed, onBeforeUnmount, onMounted, ref, watch, watchEffect} from "vue";
 import MonitorPanel from "./MonitorPanel.vue";
 import WorkOrderPanel from "./WorkOrderPanel.vue";
 import HousePanel from "./HousePanel.vue";
@@ -34,14 +34,18 @@ const dataList = ref([])
 
 const data = ref([])
 
-const loading = ref(false)
+const searchDataList = ref([])
 
-const pointName = ref("")
+const loading = ref(false)
 
 const selectedOption = ref(null)
 
 const selectOptionList = computed(() => {
   return store.selectedTabs.filter(item => item.legendType === "query")
+})
+
+const totalPages = computed(() => {
+  return data.value?.length % 10 === 0 ? data.value?.length / 10 : (Math.floor(data.value?.length / 10) + 1) || 1
 })
 
 /*onMounted(() => {
@@ -54,7 +58,29 @@ watchEffect(() => {
   }
 })
 
-watchEffect(async () => {
+watch(() => selectedOption.value,() => {
+  console.log('selectedOption.value');
+  console.log(selectedOption.value);
+
+  if (window[store.tabDataTitle]) {
+    loading.value = true
+
+    // selectedOption.value = store.tabDataTitle
+    data.value = window[selectedOption.value]?.queryDataList
+
+    console.log('data###########');
+    console.log(data);
+
+    dataList.value = data.value?.slice(start, end)
+
+    loading.value = false
+
+    console.log('dataList.value');
+    console.log(dataList.value);
+  }
+})
+
+/*watchEffect(async () => {
   // removeAllEntities()
 
   if (window[store.tabDataTitle]) {
@@ -78,26 +104,9 @@ watchEffect(async () => {
 
     console.log('dataList.value');
     console.log(dataList.value);
-
-    const lonName = window[selectedOption.value]?.lonName
-    const latName = window[selectedOption.value]?.latName
-    const iframeUrl = window[selectedOption.value]?.iframe
-
-    /*dataList.value?.forEach((item) => {
-      const longitude = item.geometry.coordinates[0]
-      const latitude = item.geometry.coordinates[1]
-
-      window[selectedOption.value].entitiesArray.push(
-          addEntity(+longitude, +latitude, 20, "/assets/entity-icons/monitor.png", {
-            longitude,
-            latitude,
-            iframeUrl
-          })
-      )
-    })*/
   }
 
-})
+})*/
 
 const removeAllEntities = () => {
   window[store.tabDataTitle]?.entitiesArray?.forEach((entity) => {
@@ -108,7 +117,7 @@ const removeAllEntities = () => {
 const currentPage = ref(1)
 
 const onLastPage = () => {
-  if (page.value === 1) {
+  if (page.value === 1 || currentPage.value === 1) {
     return
   }
 
@@ -119,7 +128,7 @@ const onLastPage = () => {
 }
 
 const onNextPage = () => {
-  if (currentPage.value === Math.floor(data.value.length / 10) + 1) {
+  if (currentPage.value === totalPages.value) {
     return
   }
 
@@ -130,27 +139,11 @@ const onNextPage = () => {
 }
 
 const onChangePage = (val) => {
-  const lonName = window[store.tabDataTitle].lonName
-  const latName = window[store.tabDataTitle].latName
-
   currentPage.value = +val
+  page.value = +val
   start = (currentPage.value - 1) * step
   end = (currentPage.value - 1) * step + 10
-  dataList.value = data.value.slice(start, end)
-
-  // removeAllEntities()
-
-  dataList.value.forEach((item) => {
-    const longitude = item[lonName]
-    const latitude = item[latName]
-
-    window[store.tabDataTitle].entitiesArray.push(
-        addEntity(+longitude, +latitude, 20, "/assets/entity-icons/monitor.png", {
-          longitude,
-          latitude
-        })
-    )
-  })
+  dataList.value = data.value?.slice(start, end)
 }
 
 const onClickData = (item) => {
@@ -161,33 +154,56 @@ const onClickData = (item) => {
 }
 
 const onChangeType = (value) => {
-  // store.setTabDataTitle(value)
   window.queryEntitiesArray.forEach(entity => {
     viewer.entities.remove(entity)
   })
   window.queryEntitiesArray = []
   const option = window[value]
-  console.log('option');
-  console.log(option);
   const {queryDataList, pointIcon} = option
-  console.log('pointIcon');
-  console.log(pointIcon);
-  queryDataList.forEach(poi => {
-    const longitude = poi.geometry.coordinates[0]
-    const latitude = poi.geometry.coordinates[1]
+
+  queryDataList?.forEach(poi => {
     const description = poi.geometry.coordinates[2]
+
     const iframeUrl = description.iframeUrl
+    const longitude = description.lonName
+    const latitude = description.latName
+    const name = description.name
+
     window.queryEntitiesArray.push(
-        addEntity(longitude, latitude, 20, pointIcon, {
+        addEntity(+longitude, +latitude, 20, pointIcon, {
           longitude,
           latitude,
-          iframeUrl
+          iframeUrl,
+          name
         })
     )
-
   })
+
+  currentPage.value = 1
+  page.value = 1
+  onChangePage(page.value)
 }
 
+const onSearch = () => {
+  if (searchInput.value) {
+    onClear()
+
+    searchDataList.value = window[selectedOption.value]?.queryDataList.filter(item => {
+      return item.geometry.coordinates[2].name?.includes(searchInput.value)
+    })
+    data.value = searchDataList.value
+    onChangePage(1)
+    dataList.value = data.value?.slice(start, end)
+  } else {
+    onClear()
+  }
+}
+
+const onClear = () => {
+  data.value = window[selectedOption.value].queryDataList
+  onChangePage(1)
+  dataList.value = data.value?.slice(start, end)
+}
 
 </script>
 
@@ -213,10 +229,10 @@ const onChangeType = (value) => {
         />
       </el-select>
     </div>
-    <!--    <div class="search">
-          <el-input v-model="searchInput"/>
-          <img src="../assets/images/searchIcon.png" alt="">
-        </div>-->
+    <div class="search">
+      <el-input placeholder="输入查询条件" v-model="searchInput" clearable @change="onSearch" @clear="onClear"/>
+      <!--          <img src="../assets/images/searchIcon.png" alt="">-->
+    </div>
     <div v-if="store.selectedTabs.length" class="dataList" v-loading="loading">
       <div v-for="item in dataList" :key="item.name" :class="{'data-item': !loading}" @click="() => onClickData(item)">
         {{ item.geometry.coordinates[2].name }}
@@ -232,8 +248,11 @@ const onChangeType = (value) => {
       </div>
       <p @click="onNextPage"> {{ ">>" }} </p>
       <div class="option">
-        {{ currentPage }}/{{ (Math.floor(data?.length / 10) + 1) || 1 }}
+        {{ currentPage }}/{{ totalPages }} 页
       </div>
+    </div>
+    <div class="total">
+      共 {{ data?.length || 0 }} 条数据
     </div>
   </div>
 </template>
@@ -261,7 +280,7 @@ const onChangeType = (value) => {
 
 .panel-wrapper {
   width: 331px;
-  height: 700px;
+  height: 750px;
   position: absolute;
   right: 180px;
   top: 150px;
@@ -290,7 +309,8 @@ const onChangeType = (value) => {
   .search {
     display: flex;
     height: 38px;
-    margin: 18px 0;
+    margin-top: 12px;
+    margin-bottom: 8px;
 
     > img {
       cursor: pointer;
@@ -313,9 +333,18 @@ const onChangeType = (value) => {
     }
   }
 
-  .page-nation {
+  .total {
     position: absolute;
     bottom: 12px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: calc(100% - 36px);
+  }
+
+  .page-nation {
+    position: absolute;
+    bottom: 32px;
     width: calc(100% - 36px);
     padding: 12px 0;
     display: flex;

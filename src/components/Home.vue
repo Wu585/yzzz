@@ -8,13 +8,9 @@ import ToolBar from "./ToolBar.vue";
 import {onMounted} from "vue";
 import {http} from "../utils/http.js";
 import {useRoute} from "vue-router";
-import DynamicComponentLayout from "./DynamicComponentLayout.vue";
-import MonitorPanel from "./MonitorPanel.vue";
-import HousePanel from "./HousePanel.vue";
-import WorkOrderPanel from "./WorkOrderPanel.vue";
-import {getMonitorCheckList, getVideoList, getWC, getWorkOrderList, getWzK} from "../utils/request.js";
 import ViewManagePanel from "./ViewManagePanel.vue";
 import RangeQueryPanel from "./RangeQueryPanel.vue";
+import axios from "axios";
 
 const store = useStore()
 
@@ -32,12 +28,7 @@ onMounted(async () => {
 })
 
 onMounted(async () => {
-  http.get("/cameraPerspective/queryAll", {
-    id
-  }).then(res => {
-    console.log('res====res');
-    console.log(res);
-  })
+
 })
 
 </script>
@@ -47,10 +38,6 @@ onMounted(async () => {
     <Scene/>
     <Header/>
     <SideBar/>
-    <!--    <MonitorPanel/>-->
-    <!--    <HousePanel/>-->
-    <!--    <WorkOrderPanel/>-->
-    <!--    <component class="dynamic" :is="store.currentDynamicComponent"></component>-->
     <TabDataPanel
         v-show="store.tabDataPanelVisible"
         :title="store.tabDataTitle"
@@ -67,9 +54,11 @@ onMounted(async () => {
   </div>
 
   <div id="bubble-container" class="bubble-container" ref="bubbleQuery" v-show="store.bubbleVisible">
-    <!--    <component class="dynamic" :is="store.currentDynamicComponent"
-                   :dataSource="store.dynamicComponentProps"></component>-->
     <iframe id="bubble-frame" name="bubble-frame" class="iframe" :src="store.iframeUrl" frameborder="0"></iframe>
+    <div class="close" @click="store.setBubbleVisible(false)">×</div>
+  </div>
+  <div id="hover-bubble-container" class="hover-bubble-container" v-show="store.hoverBubbleVisible">
+    {{ store.currentHoverEntityName }}
   </div>
 </template>
 
@@ -86,14 +75,37 @@ onMounted(async () => {
 }
 
 .iframe {
-  width: 600px;
-  height: 500px;
+  width: 800px;
+  min-height: 350px;
+}
+
+.close {
+  position: absolute;
+  font-size: 32px;
+  right: 12px;
+  top: 4px;
+  cursor: pointer;
+  color: white;
 }
 
 .bubble-container {
   position: absolute;
   z-index: 10;
-  transform: translate(-50%, -100%);
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.hover-bubble-container {
+  position: absolute;
+  z-index: 10;
+  transform: translate(-50%, -175%);
+  background: #2A4F81;
+  color: white;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .top-lay {

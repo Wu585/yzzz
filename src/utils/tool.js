@@ -87,6 +87,19 @@ export default class PickInfo {
     let lat = latitude.toFixed(6);
     let h = height.toFixed(2);
     let text = `经度: ${lng}\u00B0\n纬度: ${lat}\u00B0\n高程: ${h}m`
+
+    // 创建文本元素
+    const textElement = document.createElement('textarea');
+    textElement.value = text;
+    document.body.appendChild(textElement);
+
+    // 选择文本并复制到剪贴板
+    textElement.select();
+    document.execCommand('copy');
+
+    // 删除临时元素
+    document.body.removeChild(textElement);
+
     this.labels.add({
       position: cartesian,
       text: text,

@@ -15,7 +15,9 @@ export const useStore = defineStore('main', {
       selectedTabs: [],
       hasEntitiesArrayTabs: [],
       bubbleVisible: false,
-      iframeUrl: ""
+      iframeUrl: "",
+      hoverBubbleVisible: false,
+      currentHoverEntityName: ""
     }
   },
   actions: {
@@ -57,6 +59,12 @@ export const useStore = defineStore('main', {
     },
     setRangeQueryPanelVisible(visible) {
       this.rangeQueryPanelVisible = visible
+    },
+    setHoverBubbleVisible(visible) {
+      this.hoverBubbleVisible = visible
+    },
+    setCurrentHoverEntityName(name) {
+      this.currentHoverEntityName = name
     }
   }
 })

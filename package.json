@@ -12,6 +12,7 @@
     "@turf/turf": "^6.5.0",
     "axios": "^1.6.7",
     "dayjs": "^1.11.10",
+    "decimal.js": "^10.4.3",
     "element-plus": "^2.3.4",
     "pinia": "^2.0.35",
     "vite-svg-sprite-plugin": "^0.0.12",

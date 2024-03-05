@@ -9,6 +9,7 @@ export default defineConfig({
     proxy: {
       '/api': {
         // target: 'http://192.168.31.110:8080/',
+        // target: 'http://192.168.31.131:8180/',
         target: 'http://36.152.38.220:8180/',
         // target: 'http://localhost:3000/',
         changeOrigin: true,
@@ -22,6 +23,7 @@ export default defineConfig({
       },
       '/data-api': {
         target: 'http://36.152.38.212:8050/',
+        // target: "http://192.168.31.138:8050",
         // target: 'http://localhost:3000/',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/data-api/, ""),
@@ -29,6 +31,7 @@ export default defineConfig({
       "/map": {
         // target: "http://172.21.15.67:8090",
         target: "http://36.152.38.212:8000",
+        // target: "http://192.168.31.138:8000",
         changeOrigin: true,
         // rewrite: (path) => path.replace(/^\/map/, ""),
       },
